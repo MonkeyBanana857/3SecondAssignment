@@ -2,9 +2,114 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>3 Seconds to Win</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="container text-center py-5">
+<h1>Try to click after exactly 3 seconds. It's friggin impossible.</h1>
+<button id="actionButton" class = "btn btn-primary btn-lg my-3">Start</button>
+<div id="feedback" class="fs mb-3"></div>
+<div id="average" class = "fs-4 my-3">Average Attempt Time: 0.000</div>
+<canvas id = "timeChart" width = "400" height = "150"></canvas>
+<button id="toggleSummary" class="btn btn-secondary my-2">Show Attempt Summary (Toggle On/Off to Update)</button>
+<div id="summaryStats" class="text-start d-none my-3"></div>
+
+
+<script>
+    const goal = 3000;
+    let beginning = null;
+    const times = [];
+    const log = [];
+
+
+    const context = document.getElementById('timeChart').getContext('2d');
+    const chart = new Chart(context, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Elapsed Time',
+                data: [],
+                borderColor: 'green',
+                fill: true,
+                backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    min: 0,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    const actionButton = document.getElementById('actionButton')
+    actionButton.addEventListener('click', () => {
+        if (!beginning) {
+            beginning = new Date();
+            actionButton.textContent = 'Stop';
+            feedback.textContent = '';
+        } else {
+            const end = new Date() - beginning;
+            const seconds = (end / 1000).toFixed(3); //converts to string
+            beginning = null;
+            actionButton.textContent = 'Start';
+            
+            const diff = Math.abs(end - goal);
+
+            if (diff === 0) {
+                color = 'green';
+                message = "You did it whoop de dang do";
+            } else if (diff <= 200) {
+                color = 'blue';
+                message = "Close but no banana";
+            } else if (diff <= 500) {
+                color = 'yellow';
+                message = "Within 500 milliseconds";
+            } else {
+                color = 'red';
+                message = "You failed, hahaha.";
+            }
+
+            feedback.innerHTML = '<span style="color:' + color + '">' + message + '</span>';
+
+            times.push(parseFloat(seconds));
+            chart.data.labels.push(times.length);
+            chart.data.datasets[0].data = times;
+            chart.update();
+
+            const totalTime = times.reduce((sum, time) => sum + time, 0);
+            const average = (totalTime / times.length).toFixed(3);
+            document.getElementById('average').textContent = "Average Attempt Time: " + average;
+            beginning = null;
+        }
+    });
+
+    document.getElementById('toggleSummary').addEventListener('click', () => {
+        const summaryStatsDiv = document.getElementById('summaryStats');
+        summaryStatsDiv.classList.toggle('d-none');
+        if (!summaryStatsDiv.classList.contains('d-none')) {
+            const min = Math.min(...times).toFixed(3);
+            const max = Math.max(...times).toFixed(3);
+            const avg = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(3);
+            const count = times.length;
+
+            summaryStatsDiv.innerHTML =
+                "<h4>Summary Stats:</h4>" +
+                "<ul>" +
+                "<li>Total Attempts: " + count + "</li>" +
+                "<li>Minimum Attempt Time: " + min + "s</li>" +
+                "<li>Maximum Attempt Time: " + max + "s</li>" +
+                "<li>Average Attempt Time: " + avg + "s</li>" +
+                "</ul>";
+
+        }
+    });
+</script>
 
 </body>
 </html>
